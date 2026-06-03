@@ -1,1 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baly vs Talabat - Discount Comparison Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1F4E78 0%, #365B89 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #667eea;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            border-left: 5px solid #667eea;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #1F4E78;
+        }
+
+        .metric-card.match {
+            border-left-color: #28a745;
+        }
+
+        .metric-card.higher {
+            border-left-color: #ffc107;
+        }
+
+        .metric-card.lower {
+            border-left-color: #dc3545;
+        }
+
+        .metric-card.nomatch {
+            border-left-color: #17a2b8;
+        }
+
+        .controls {
+            padding: 30px;
+            background: white;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .control-group select,
+        .control-group input {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .control-group select:focus,
+        .control-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .table-wrapper {
+            padding: 30px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95em;
+        }
+
+        thead {
+            background: #366092;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            border: 1px solid #366092;
+        }
+
+        td {
+            padding: 12px 15px;
+            border: 1px solid #e0e0e0;
+        }
+
+        tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        tbody tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        .status-match {
+            background-color: #C6EFCE;
+            color: #006100;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status-talabat {
+            background-color: #FFEB9C;
+            color: #9C6500;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status-baly {
+            background-color: #FFC7CE;
+            color: #9C0006;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status-nomatch {
+            background-color: #BDD7EE;
+            color: #002060;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .checkbox-cell {
+            text-align: center;
+            font-size: 1.5em;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-cell:hover {
+            background-color: #fff3cd !important;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .refresh-btn:hover {
+            background: #5568d3;
+        }
+
+        .last-updated {
+            font-size: 0.9em;
+            color: #999;
+            margin-left: auto;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            table {
+                font-size: 0.85em;
+            }
+
+            th, td {
+                padding: 8px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Baly vs Talabat Discount Comparison</h1>
+            <p>Real-time vendor discount analysis and alignment tracking</p>
+        </div>
+
+        <div id="loading" class="loading">Loading dashboard data...</div>
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="content" style="display: none;">
+            <div class="metrics-grid" id="metricsGrid"></div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="amFilter">Filter by Account Manager:</label>
+                    <select id="amFilter">
+                        <option value="">All Account Managers</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="searchFilter">Search Vendor:</label>
+                    <input type="text" id="searchFilter" placeholder="Enter vendor name...">
+                </div>
+                <button class="refresh-btn" onclick="loadDashboard()">🔄 Refresh</button>
+                <div class="last-updated" id="lastUpdated"></div>
+            </div>
+
+            <div class="table-wrapper">
+                <table id="vendorTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Baly Vendor</th>
+                            <th>Baly Discount</th>
+                            <th>Talabat Vendor</th>
+                            <th>Talabat Discount</th>
+                            <th>AM Name</th>
+                            <th>Match Status</th>
+                            <th>Done</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vendorTableBody">
+                    </tbody>
+                </table>
+                <div id="noData" class="no-data" style="display: none;">No vendors found</div>
+            </div>
+
+            <div class="footer">
+                <p>Dashboard last synced: <span id="syncTime"></span></p>
+                <p style="margin-top: 10px; font-size: 0.85em;">Data automatically updates from Google Sheet in real-time • Completed items saved locally in your browser</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SHEET_ID = '1o5pvfhk2uRIaGARMduaEfiE1QNL5f2_EWRqwVIjXmxA';
+        const SHEET_NAME = 'Discount Data';
+        const API_KEY = 'AIzaSyBXgJwvYAHmzfAKyHRb_19i1L3gVYfHvJQ';
+
+        let allVendors = [];
+        let completedVendors = new Set();
+
+        function loadCompletedItems() {
+            const saved = localStorage.getItem('completedVendors');
+            if (saved) {
+                completedVendors = new Set(JSON.parse(saved));
+            }
+        }
+
+        function saveCompletedItems() {
+            localStorage.setItem('completedVendors', JSON.stringify(Array.from(completedVendors)));
+        }
+
+        function toggleDone(vendorId) {
+            if (completedVendors.has(vendorId)) {
+                completedVendors.delete(vendorId);
+            } else {
+                completedVendors.add(vendorId);
+            }
+            saveCompletedItems();
+            applyFilters();
+        }
+
+        async function loadDashboard() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+                document.getElementById('content').style.display = 'none';
+
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/'${SHEET_NAME}'!A:H?key=${API_KEY}`;
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Failed to fetch data');
+
+                const data = await response.json();
+                const rows = data.values || [];
+
+                allVendors = [];
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (!row || !row[0]) continue;
+
+                    allVendors.push({
+                        id: i,
+                        date: row[0] || '',
+                        balyVendor: row[1] || '',
+                        balyDiscount: row[2] || '',
+                        talatVendor: row[4] || '',
+                        talatDiscount: row[6] || '',
+                        amName: row[5] || '',
+                        comment: row[7] || ''
+                    });
+                }
+
+                calculateMetrics();
+                populateAMFilter();
+                applyFilters();
+                updateSyncTime();
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').innerHTML = `<strong>Error loading data:</strong> ${error.message}`;
+            }
+        }
+
+        function calculateMetrics() {
+            const totalBaly = allVendors.length;
+            const totalTalabat = allVendors.filter(v => v.talatVendor && v.talatVendor !== 'Not found').length;
+            const hasDiscount = allVendors.filter(v => v.talatDiscount && v.talatDiscount !== '').length;
+            const noDiscount = totalTalabat - hasDiscount;
+
+            let matchCount = 0;
+            let talatHigher = 0;
+            let balyHigher = 0;
+
+            allVendors.forEach(v => {
+                if (!v.balyDiscount || !v.talatDiscount) return;
+
+                const balyNum = parseFloat(v.balyDiscount);
+                const talatNum = parseFloat(v.talatDiscount);
+
+                if (balyNum === talatNum) {
+                    matchCount++;
+                } else if (talatNum > balyNum) {
+                    talatHigher++;
+                } else if (balyNum > talatNum) {
+                    balyHigher++;
+                }
+            });
+
+            const matchRate = (matchCount + talatHigher + balyHigher) > 0 ? ((matchCount / (matchCount + talatHigher + balyHigher)) * 100).toFixed(2) : 0;
+
+            const metricsData = [
+                { label: 'Total Vendors (Baly)', value: totalBaly, class: 'match' },
+                { label: 'Total Vendors (Talabat Found)', value: totalTalabat, class: 'match' },
+                { label: 'Vendors with Discount', value: hasDiscount, class: 'match' },
+                { label: 'Without Discount', value: noDiscount, class: 'nomatch' },
+                { label: '100% Match', value: matchCount, class: 'match' },
+                { label: 'Talabat Higher', value: talatHigher, class: 'higher' },
+                { label: 'Baly Higher', value: balyHigher, class: 'lower' },
+                { label: 'Match Rate', value: `${matchRate}%`, class: 'match' }
+            ];
+
+            const grid = document.getElementById('metricsGrid');
+            grid.innerHTML = metricsData.map(m => `
+                <div class="metric-card ${m.class}">
+                    <div class="metric-label">${m.label}</div>
+                    <div class="metric-value">${m.value}</div>
+                </div>
+            `).join('');
+        }
+
+        function populateAMFilter() {
+            const ams = [...new Set(allVendors.map(v => v.amName).filter(a => a))].sort();
+            const select = document.getElementById('amFilter');
+            const currentValue = select.value;
+
+            ams.forEach(am => {
+                if (!select.querySelector(`option[value="${am}"]`)) {
+                    const option = document.createElement('option');
+                    option.value = am;
+                    option.textContent = am;
+                    select.appendChild(option);
+                }
+            });
+
+            select.value = currentValue;
+        }
+
+        function getMatchStatus(vendor) {
+            if (!vendor.balyDiscount || !vendor.talatDiscount) {
+                return { text: 'No Talabat Match', class: 'status-nomatch' };
+            }
+
+            const balyNum = parseFloat(vendor.balyDiscount);
+            const talatNum = parseFloat(vendor.talatDiscount);
+
+            if (balyNum === talatNum) {
+                return { text: '✓ 100% Match', class: 'status-match' };
+            } else if (talatNum > balyNum) {
+                return { text: 'Talabat Higher', class: 'status-talabat' };
+            } else if (balyNum > talatNum) {
+                return { text: 'Baly Higher', class: 'status-baly' };
+            }
+            return { text: 'No Match', class: 'status-nomatch' };
+        }
+
+        function applyFilters() {
+            const amFilter = document.getElementById('amFilter').value;
+            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+
+            let filtered = allVendors.filter(v => {
+                if (amFilter && v.amName !== amFilter) return false;
+                if (searchFilter && !v.balyVendor.toLowerCase().includes(searchFilter)) return false;
+                return true;
+            });
+
+            const tbody = document.getElementById('vendorTableBody');
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                document.getElementById('noData').style.display = 'block';
+                document.getElementById('vendorTable').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('noData').style.display = 'none';
+            document.getElementById('vendorTable').style.display = 'table';
+
+            filtered.forEach(vendor => {
+                const status = getMatchStatus(vendor);
+                const isDone = completedVendors.has(vendor.id);
+                const doneSymbol = isDone ? '✓' : '☐';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${vendor.date}</td>
+                    <td>${vendor.balyVendor}</td>
+                    <td><strong>${vendor.balyDiscount}</strong></td>
+                    <td>${vendor.talatVendor}</td>
+                    <td><strong>${vendor.talatDiscount}</strong></td>
+                    <td>${vendor.amName}</td>
+                    <td><span class="${status.class}">${status.text}</span></td>
+                    <td class="checkbox-cell" onclick="toggleDone(${vendor.id})" title="Click to toggle completion">${doneSymbol}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateSyncTime() {
+            const now = new Date();
+            document.getElementById('syncTime').textContent = now.toLocaleString();
+        }
+
+        document.getElementById('amFilter').addEventListener('change', applyFilters);
+        document.getElementById('searchFilter').addEventListener('input', applyFilters);
+
+        loadCompletedItems();
+        loadDashboard();
+
+        setInterval(loadDashboard, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
